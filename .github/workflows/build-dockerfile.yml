@@ -9,14 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Control that Dockerfile build
+      - name: Control that Dockerfile builds
         run: |
-          archs="aarch64 armv7hf"
+          archs='aarch64 armv7hf'
           testtag=buildcheck
           for arch in $archs
           do
-            printf "\n\n### Build Dockerfile.$arch\n"
-            docker build -t $testtag:$arch -f Dockerfile.$arch .
+            printf "\n\n### Build for $arch\n"
+            docker build -t $testtag:$arch --build-arg ARCH=$arch .
           done
 
           for arch in $archs

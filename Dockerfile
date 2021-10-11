@@ -7,12 +7,20 @@ ARG REPO=axisecp
 
 FROM ${REPO}/acap-api:${VERSION}-${ARCH}-ubuntu${TOOLCHAINS_UBUNTU_VERSION} as api
 FROM ${REPO}/acap-toolchain:${VERSION}-${ARCH}-ubuntu${TOOLCHAINS_UBUNTU_VERSION} as toolchain
-FROM ubuntu:${UBUNTU_VERSION}
+
+FROM ubuntu:${UBUNTU_VERSION} AS armv7hf
+ENV CROSSBUILDARCH=armhf
+
+FROM ubuntu:${UBUNTU_VERSION} AS aarch64
+ENV CROSSBUILDARCH=arm64
+
+FROM ${ARCH}
+ARG ARCH
 
 # Install packages needed for interactive users and some additional libraries
 # - curl, iputils-ping: required by eap-install.sh
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  crossbuild-essential-armhf \
+  crossbuild-essential-$CROSSBUILDARCH \
   make \
   pkg-config \
   python3-pip \
@@ -47,7 +55,6 @@ RUN sed -i 's:/opt/axis/sdk:/opt/axis/acapsdk:g' /opt/axis/acapsdk/environment-s
   sed -i '/^export LDFLAGS=/ s:"$: -Wl,--disable-new-dtags":' /opt/axis/acapsdk/environment-setup*
 
 # Copy the lib, include, .pc and Axis protobuf files from the API container
-ARG ARCH=armv7hf
 COPY --from=api /opt/axis/sdk/temp/sysroots/${ARCH}/usr/lib/ /opt/axis/acapsdk/sysroots/${ARCH}/usr/lib/
 COPY --from=api /opt/axis/sdk/temp/sysroots/${ARCH}/usr/include/ /opt/axis/acapsdk/sysroots/${ARCH}/usr/include/
 COPY --from=api /opt/axis/sdk/temp/sysroots/${ARCH}/usr/share/protobuf/ /opt/axis/acapsdk/sysroots/${ARCH}/usr/share/protobuf/
